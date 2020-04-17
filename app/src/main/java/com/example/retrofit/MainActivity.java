@@ -2,6 +2,7 @@ package com.example.retrofit;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -17,6 +20,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
+
+    // Errors code : https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 
     TextView textView, captionTextView;
 
@@ -44,21 +49,34 @@ public class MainActivity extends AppCompatActivity {
         textView = findViewById(R.id.textResultId);
         captionTextView = findViewById(R.id.captionTextViewId);
 
+        //Retrofit use okHttp Client for logging
+        // Creating HttpLoggingInterceptor
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+        // Connecting HttpLoggingInterceptor with okHttpClient
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
+                .build();
+
+
         /** Build a retrofit object **/
-        retrofit = new Retrofit.Builder().
-                /*  Base url
-                 *  '/' must be put at the last of the url**/
-                        baseUrl("https://jsonplaceholder.typicode.com/").
+        retrofit = new Retrofit.Builder()
+                /*  Base url. '/' must be put at the last of the url**/
+                .baseUrl("https://jsonplaceholder.typicode.com/")
                 /** Converter which convert JSON to java object **/
-                        addConverterFactory(GsonConverterFactory.create()).
-                        build();
+                .addConverterFactory(GsonConverterFactory.create())
+                /** Adding OkHttp Client with Retrofit **/
+                .client(okHttpClient)
+                .build();
+
 
         /* JsonPlaceHolderApi is a interface so we can't directly create object
          * with help of retrofit object we get jsonPlaceHolderApi object **/
         jsonPlaceHolderApi = retrofit.create(JsonPlaceHolderApi.class);
 
 
-        getPost("https://jsonplaceholder.typicode.com/posts");
+        //getPost("https://jsonplaceholder.typicode.com/posts");
 
         //getComment(5);
 
@@ -68,10 +86,146 @@ public class MainActivity extends AppCompatActivity {
         //getSpecificPost(5, "id", "desc");
 
         //getSpecificPost();
+
+        //createPost();
+
+        updatePost();
+
+        //deletePost();
+
+    }
+
+    // Delete Post using 'DELETE' request
+    private void deletePost() {
+
+        Call<Void> voidCall = jsonPlaceHolderApi.deletePost(5);
+
+        voidCall.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (!response.isSuccessful()) {
+                    textView.setText("Code : " + response.code());
+                    return;
+                }
+
+
+                textView.setText("Code : " + response.code());
+
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                textView.setGravity(Gravity.CENTER | Gravity.TOP);
+                textView.setTextSize(40f);
+                textView.setText(t.getMessage().toUpperCase());
+                progressDialog.dismiss();
+            }
+        });
     }
 
 
-    // Specific Post
+    // Update Post using 'PUT' pr 'PATCH' request
+    private void updatePost() {
+        Post post = new Post(12, null, "New Text");
+
+        // TODO 'PUT' request
+        Call<Post> postCall = jsonPlaceHolderApi.putPost(5,post);
+
+        // TODO 'PATCH' request
+        //Call<Post> postCall = jsonPlaceHolderApi.patchPost(5, post);
+
+        postCall.enqueue(new Callback<Post>() {
+            @Override
+            public void onResponse(Call<Post> call, Response<Post> response) {
+                if (!response.isSuccessful()) {
+                    textView.setText("Code : " + response.code());
+                    return;
+                }
+
+                Post postResponse = response.body();
+
+                StringBuilder stringBuilder = new StringBuilder();
+
+                stringBuilder.append("Code : " + response.code() + "\n");
+                stringBuilder.append("Id : " + postResponse.getId() + "\n");
+                stringBuilder.append("User Id : " + postResponse.getUserId() + "\n");
+                stringBuilder.append("Title : " + postResponse.getTitle() + "\n");
+                stringBuilder.append("Message : " + postResponse.getMessage() + "\n");
+
+                textView.setText(stringBuilder.toString());
+
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Call<Post> call, Throwable t) {
+                textView.setGravity(Gravity.CENTER | Gravity.TOP);
+                textView.setTextSize(40f);
+                textView.setText(t.getMessage().toUpperCase());
+                progressDialog.dismiss();
+            }
+        });
+    }
+
+
+    // Create Post using 'Post' Request
+    private void createPost() {
+        captionTextView.setText("\"POST-   /posts\"" + "\n" + "Create post");
+
+        Post post = new Post(29, "Junaed", "A good android developer");
+        // TODO WITHOUT USING "@FormUrlEncoded"
+        // Call<Post> createPostCall = jsonPlaceHolderApi.createPost(post);
+
+
+        // TODO USING "@FormUrlEncoded" with Field
+        // Call<Post> createPostCall = jsonPlaceHolderApi.createPost(29,"New Title", "New Text");
+
+
+        // TODO USING "@FormUrlEncoded:" with FieldMap
+        Map<String, String> fieldMap = new HashMap<>();
+        fieldMap.put("userId", "29");
+        fieldMap.put("title", "New Title");
+        fieldMap.put("body", "New Text");
+        Call<Post> createPostCall = jsonPlaceHolderApi.createPost(fieldMap);
+
+
+        createPostCall.enqueue(new Callback<Post>() {
+            @Override
+            public void onResponse(Call<Post> call, Response<Post> response) {
+                if (!response.isSuccessful()) {
+                    textView.setText("Code : " + response.code());
+                    return;
+                }
+
+                Post postResponse = response.body();
+
+                StringBuilder stringBuilder = new StringBuilder();
+
+                stringBuilder.append("Code : " + response.code() + "\n");
+                stringBuilder.append("Id : " + postResponse.getId() + "\n");
+                stringBuilder.append("User Id : " + postResponse.getUserId() + "\n");
+                stringBuilder.append("Title : " + postResponse.getTitle() + "\n");
+                stringBuilder.append("Message : " + postResponse.getMessage() + "\n");
+
+                textView.setText(stringBuilder.toString());
+
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Call<Post> call, Throwable t) {
+                textView.setGravity(Gravity.CENTER | Gravity.TOP);
+                textView.setTextSize(40f);
+                textView.setText(t.getMessage().toUpperCase());
+                progressDialog.dismiss();
+            }
+        });
+
+    }
+
+
+    // Specific Post for 'GET' request
     public void getSpecificPost(int postId) {
 
         captionTextView.setText("\"GET    /posts?userId=" + postId + "\"" + "\n" + "Posts for '" + postId + "' userId");
@@ -80,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
         Call<List<Post>> allPostCall = jsonPlaceHolderApi.getPosts(postId);
 
         /* allPostCall.execute can freeze the app
-         * so we call allPostCall.enqueue which is retrofit default method to word background thread  ***/
+         * so we call allPostCall.enqueue which is retrofit default method to work in background thread  ***/
         allPostCall.enqueue(new Callback<List<Post>>() {
             @Override
             public void onResponse(Call<List<Post>> call, Response<List<Post>> response) {
@@ -123,10 +277,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    // Specific Post By Map
+    // Specific Post By Map for 'GET' request
     public void getSpecificPost() {
 
-        Map <String, String> parameter = new HashMap<>();
+        Map<String, String> parameter = new HashMap<>();
 
         // HashMap can take key just one time so we cant use multiple userId here
         parameter.put("userId", "2");
@@ -153,6 +307,8 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
+
+
                 /* get all list of Post class object
                  * by response body*/
                 List<Post> allPost = response.body();
@@ -181,10 +337,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // More Specific Post sort and orderBy
+
+    // More Specific Post sort and orderBy for 'GET' request
     public void getSpecificPost(Integer postId, String sort, String orderBy) {
 
-        captionTextView.setText("\"GET    /posts?userId=" + postId + "&_sort="+sort+"&_order="+orderBy+"\"" + "\n" + "Posts for '" + postId + "' userId sort by '"+sort+"' and '"+orderBy+"' order");
+        captionTextView.setText("\"GET    /posts?userId=" + postId + "&_sort=" + sort + "&_order=" + orderBy + "\"" + "\n" + "Posts for '" + postId + "' userId sort by '" + sort + "' and '" + orderBy + "' order");
 
 
         // If we don't need any specification then just pass null
@@ -238,7 +395,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // All Post
+
+    // All Post for 'GET' request
     public void getPost() {
 
         captionTextView.setText("\"GET-   /posts\"" + "\n" + "All posts");
@@ -289,7 +447,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // All Post from directly from URL
+
+    // All Post from directly from URL for 'GET' request
     public void getPost(String url) {
 
         captionTextView.setText("\"Post By url\"" + "\n" + "All posts");
@@ -340,7 +499,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // Specific Comments
+
+    // Specific Comments for 'GET' request
     public void getComment(int postId) {
 
         captionTextView.setText("\"GET    /posts/" + postId + "/comments\"" + "\nComments for '" + postId + "' postId");

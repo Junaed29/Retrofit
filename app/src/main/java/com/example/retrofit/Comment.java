@@ -13,6 +13,7 @@ public class Comment  {
     private String email;
 
 
+    // It is a GSON properties
     @SerializedName("body")
     private String message;
 
