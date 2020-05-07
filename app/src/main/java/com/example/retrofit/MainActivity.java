@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         Post post = new Post(12, null, "New Text");
 
         // TODO 'PUT' request
-        Call<Post> postCall = jsonPlaceHolderApi.putPost(5,post);
+        Call<Post> postCall = jsonPlaceHolderApi.putPost("789",5,post);
 
         // TODO 'PATCH' request
         //Call<Post> postCall = jsonPlaceHolderApi.patchPost(5, post);
