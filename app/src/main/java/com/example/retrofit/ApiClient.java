@@ -12,16 +12,25 @@ public class ApiClient {
 
     private static Retrofit retrofit = null;
 
+
+    // Singleton instance for Retrofit
     public static Retrofit getClient() {
         if (retrofit == null) {
+            //Retrofit use okHttp Client for logging (Debugging)
+            // Creating HttpLoggingInterceptor
             HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
+            // Connecting HttpLoggingInterceptor with okHttpClient
             OkHttpClient client = new OkHttpClient.Builder().addInterceptor(loggingInterceptor).build();
 
+            /** Build a retrofit object **/
             retrofit = new Retrofit.Builder()
+                    /*  Base url. '/' must be put at the last of the url**/
                     .baseUrl(BASE_URL)
+                    /* Converter which convert JSON to java object **/
                     .addConverterFactory(GsonConverterFactory.create())
+                    /* Adding OkHttp Client with Retrofit **/
                     .client(client)
                     .build();
         }

@@ -25,8 +25,6 @@ public class MainActivity extends AppCompatActivity {
 
     TextView textView, captionTextView;
 
-    /*****Retrofit object******/
-    Retrofit retrofit;
 
     //JsonPlaceHolderApi api
     JsonPlaceHolderApi jsonPlaceHolderApi;
@@ -49,34 +47,14 @@ public class MainActivity extends AppCompatActivity {
         textView = findViewById(R.id.textResultId);
         captionTextView = findViewById(R.id.captionTextViewId);
 
-        //Retrofit use okHttp Client for logging
-        // Creating HttpLoggingInterceptor
-        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-
-        // Connecting HttpLoggingInterceptor with okHttpClient
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .addInterceptor(loggingInterceptor)
-                .build();
-
-
-        /** Build a retrofit object **/
-        retrofit = new Retrofit.Builder()
-                /*  Base url. '/' must be put at the last of the url**/
-                .baseUrl("https://jsonplaceholder.typicode.com/")
-                /** Converter which convert JSON to java object **/
-                .addConverterFactory(GsonConverterFactory.create())
-                /** Adding OkHttp Client with Retrofit **/
-                .client(okHttpClient)
-                .build();
-
 
         /* JsonPlaceHolderApi is a interface so we can't directly create object
          * with help of retrofit object we get jsonPlaceHolderApi object **/
-        jsonPlaceHolderApi = retrofit.create(JsonPlaceHolderApi.class);
+        jsonPlaceHolderApi = ApiClient.getClient().create(JsonPlaceHolderApi.class);
 
 
         //getPost("https://jsonplaceholder.typicode.com/posts");
+        getPost();
 
         //getComment(5);
 
@@ -89,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
         //createPost();
 
-        updatePost();
+        //updatePost();
 
         //deletePost();
 
